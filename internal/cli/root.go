@@ -26,6 +26,9 @@ func NewRootCommand(log *logger.Logger) *cobra.Command {
 	rootCmd.AddCommand(
 		commands.NewVersionCmd(),
 		commands.NewInitCmd(log),
+		commands.NewInfoCmd(log),
+		commands.NewDownloadCmd(log),
+		commands.NewVerifyCmd(log),
 	)
 
 	return rootCmd
