@@ -8,15 +8,43 @@ import (
 	"github.com/marpit19/zap-pm/internal/errors"
 )
 
-// PackageJSON represents the structure of a package.json file
-type PackageJSON struct {
-	Name            string            `json:"name"`
-	Version         string            `json:"version"`
-	Description     string            `json:"description,omitempty"`
-	Main            string            `json:"main,omitempty"`
-	Scripts         map[string]string `json:"scripts,omitempty"`
-	Dependencies    map[string]string `json:"dependencies,omitempty"`
-	DevDependencies map[string]string `json:"devDependencies,omitempty"`
+// ParsePackageJSON reads and parses a package.json file
+func ParsePackageJSON(filename string) (*PackageJSON, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, errors.New(errors.ErrPackageJSONNotFound, "failed to read package.json", err)
+	}
+
+	var pkg PackageJSON
+	if err := json.Unmarshal(data, &pkg); err != nil {
+		return nil, errors.New(errors.ErrInvalidPackageJSON, "failed to parse package.json", err)
+	}
+
+	// Validate after parsing
+	if errs := pkg.Validate(); len(errs) > 0 {
+		return nil, errors.New(errors.ErrInvalidPackageJSON, errs[0].Message, nil)
+	}
+
+	return &pkg, nil
+}
+
+// WriteToFile writes the PackageJSON to a file
+func (p *PackageJSON) WriteToFile(filename string) error {
+	// Validate before writing
+	if errs := p.Validate(); len(errs) > 0 {
+		return errors.New(errors.ErrInvalidPackageJSON, errs[0].Message, nil)
+	}
+
+	data, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return errors.New(errors.ErrInvalidPackageJSON, "failed to marshal package.json", err)
+	}
+
+	if err := os.WriteFile(filename, data, 0644); err != nil {
+		return errors.New(errors.ErrInvalidPackageJSON, "failed to write package.json", err)
+	}
+
+	return nil
 }
 
 // DefaultPackageJSON creates a package.json with default values
@@ -32,40 +60,11 @@ func DefaultPackageJSON() *PackageJSON {
 	}
 }
 
-// ParsePackageJSON reads and parses a package.json file
-func ParsePackageJSON(filename string) (*PackageJSON, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, errors.New(errors.ErrPackageJSONNotFound, "failed to read package.json", err)
-	}
-
-	var pkg PackageJSON
-	if err := json.Unmarshal(data, &pkg); err != nil {
-		return nil, errors.New(errors.ErrInvalidPackageJSON, "failed to parse package.json", err)
-	}
-
-	return &pkg, nil
-}
-
-// WriteToFile writes the PackageJSON to a file
-func (p *PackageJSON) WriteToFile(filename string) error {
-	data, err := json.MarshalIndent(p, "", "  ")
-	if err != nil {
-		return errors.New(errors.ErrInvalidPackageJSON, "failed to marshal package.json", err)
-	}
-
-	if err := os.WriteFile(filename, data, 0644); err != nil {
-		return errors.New(errors.ErrInvalidPackageJSON, "failed to write package.json", err)
-	}
-
-	return nil
-}
-
 // getCurrentDir returns the current directory name
 func getCurrentDir() string {
 	dir, err := os.Getwd()
 	if err != nil {
 		return "my-project"
 	}
-	return dir
+	return filepath.Base(dir)
 }

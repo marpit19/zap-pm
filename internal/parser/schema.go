@@ -8,6 +8,17 @@ import (
 	"github.com/marpit19/zap-pm/internal/errors"
 )
 
+// PackageJSON represents the structure of a package.json file
+type PackageJSON struct {
+	Name            string            `json:"name"`
+	Version         string            `json:"version"`
+	Description     string            `json:"description,omitempty"`
+	Main            string            `json:"main,omitempty"`
+	Scripts         map[string]string `json:"scripts,omitempty"`
+	Dependencies    map[string]string `json:"dependencies,omitempty"`
+	DevDependencies map[string]string `json:"devDependencies,omitempty"`
+}
+
 // ValidationError represents a package.json validation error
 type ValidationError struct {
 	Field   string
@@ -39,6 +50,16 @@ func (p *PackageJSON) Validate() []ValidationError {
 		if err := validateDependency(dep, ver); err != nil {
 			validationErrors = append(validationErrors, ValidationError{
 				Field:   "dependencies." + dep,
+				Message: err.Error(),
+			})
+		}
+	}
+
+	// Validate devDependencies
+	for dep, ver := range p.DevDependencies {
+		if err := validateDependency(dep, ver); err != nil {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   "devDependencies." + dep,
 				Message: err.Error(),
 			})
 		}
@@ -89,11 +110,13 @@ func validateDependency(name, version string) error {
 			nil)
 	}
 
+	// Check for common version formats
 	valid := regexp.MustCompile(`^([\^~]?[0-9]+\.[0-9]+\.[0-9]+|latest|[*]|>=[0-9]+\.[0-9]+\.[0-9]+|file:.*|git\+https:\/\/.*)$`)
 	if !valid.MatchString(version) {
 		return errors.New(errors.ErrInvalidPackageJSON,
 			fmt.Sprintf("invalid version format for dependency '%s'", name),
 			nil)
 	}
+
 	return nil
 }
