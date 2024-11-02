@@ -2,9 +2,9 @@
 
 A lightweight, fast JavaScript package manager built with Go. Zap focuses on speed and simplicity, making it perfect for quick projects and learning about package management.
 
-## Current Status (2 Days Progress)
+## Current Status
 
-Zap is currently in early development (Day 2 complete). It implements core package management features with a focus on speed and reliability.
+Zap is currently in early development. It implements core package management features with a focus on speed and reliability.
 
 ### Features Comparison
 
